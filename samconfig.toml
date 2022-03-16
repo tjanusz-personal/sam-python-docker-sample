@@ -1,0 +1,34 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sam-python-sample"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1xwj3nnf2xsn9"
+s3_prefix = "sam-python-sample"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+image_repository = "211287010274.dkr.ecr.us-east-1.amazonaws.com/sam-python-sample"
+parameter_overrides = [
+    "S3BucketName=tjanusz-personal-demo-stuff",
+    "ValidBaseImagesKey=dockerImagesSecInfo/validBaseImages.csv",
+    "EnvPrefix=Dev",
+    "ResultOutputKey=dockerImagesSecInfo/scanResults1.csv"
+]
+
+[tst.deploy.parameters]
+stack_name = "tst-sam-python-sample"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1xwj3nnf2xsn9"
+s3_prefix = "sam-python-sample"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+image_repository = "211287010274.dkr.ecr.us-east-1.amazonaws.com/sam-python-sample"
+parameter_overrides = [
+    "S3BucketName=tst-tjanusz-personal-demo-stuff",
+    "ValidBaseImagesKey=dockerImagesSecInfo/validBaseImages.csv",
+    "EnvPrefix=Tst",
+    "ResultOutputKey=dockerImagesSecInfo/scanResults1.csv"
+]

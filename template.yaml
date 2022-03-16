@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  python3.9
+
+  Sample SAM Template for sam-python-sample
+
+Globals:
+  Function:
+    Timeout: 60
+
+Parameters:
+  EnvPrefix:
+    Type: String
+    Default: dev
+  S3BucketName:
+    Type: String
+    Default: my-bucket-name
+  ValidBaseImagesKey:
+    Type: String
+    Default: defaultBaseObjectKey
+  ResultOutputKey:
+    Type: String
+    Default: "dockerImagesSecInfo/scanResults1.csv"
+
+Resources:
+  EcsReaderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Join ["-", [!Ref EnvPrefix, "sam-python-ecs-reader"]]
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - ecs_reader.lambda_handler
+      Architectures:
+        - x86_64
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref S3BucketName
+        - S3WritePolicy:
+            BucketName: !Ref S3BucketName
+        - Statement:
+          - Sid: ECSDescribeTasksPolicy
+            Effect: Allow
+            Action:
+            - ecs:ListTasks
+            - ecs:DescribeTasks
+            Resource: '*'            
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3BucketName
+          VALID_BASE_IMAGES_KEY: !Ref ValidBaseImagesKey
+          RESULT_OUTPUT_KEY: !Ref ResultOutputKey
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./ecshelpers
+      DockerTag: python3.9-v2
+
+  BaseImageFinderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Join ["-", [!Ref EnvPrefix, "sam-python-base-image-finder"]]
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref S3BucketName
+        - LambdaInvokePolicy:
+            FunctionName: !Ref EcsReaderFunction            
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - base_image_finder.lambda_handler
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3BucketName
+          VALID_BASE_IMAGES_KEY: !Ref ValidBaseImagesKey
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./ecshelpers
+      DockerTag: python3.9-v2
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  EcsReaderFunctionOutput:
+    Description: "EcsReader Lambda Function ARN"
+    Value: !GetAtt EcsReaderFunction.Arn
+  BaseImageFinderFunctionOutput:
+    Description: "BaseImage Finder Lambda Function ARN"
+    Value: !GetAtt BaseImageFinderFunction.Arn
+  EcsReaderFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt EcsReaderFunction.Arn
